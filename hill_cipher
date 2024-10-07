@@ -1,0 +1,225 @@
+import java.util.Scanner;
+
+public class Practical3 
+{
+    private static int[][] getKeyMatrix(String key) 
+    {
+        key = key.replaceAll("[^a-zA-Z]", "").toUpperCase();
+        int size = (int) Math.sqrt(key.length());
+
+        if (size*size != key.length()) 
+        {
+            System.out.println("Invalid key length. Key length must be a perfect square.");
+            System.exit(1);
+        }
+
+        int[][] keyMatrix = new int[size][size];
+        int k = 0;
+
+        for (int i=0; i<size; i++) 
+        {
+            for (int j=0; j<size; j++) 
+            {
+                keyMatrix[i][j] = key.charAt(k)-'A';
+                k++;
+            }
+        }
+
+        return keyMatrix;
+    }
+
+    private static int[][] inverseMatrix(int[][] keyMatrix) 
+    {
+        int det = calculateDeterminant(keyMatrix);
+        int modInverse = modInverse(det, 26);
+        int size = keyMatrix.length;
+        int[][] inverseMatrix = new int[size][size];
+
+        for (int i=0; i<size; i++) 
+        {
+            for (int j=0; j<size; j++) 
+            {
+                int minor = calculateMinor(keyMatrix, i, j);
+                int cofactor = (i+j)%2==0 ? minor : (26-minor)%26;
+                inverseMatrix[j][i] = (cofactor*modInverse) % 26;
+            }
+        }
+
+        return inverseMatrix;
+    }
+
+    private static int calculateDeterminant(int[][] matrix) 
+    {
+        int size = matrix.length;
+
+        if (size == 1) 
+        {
+            return matrix[0][0];
+        }
+
+        if (size == 2) 
+        {
+            return (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0] + 26) % 26;
+        }
+
+        int det = 0;
+        for (int i=0; i<size; i++) 
+        {
+            int minor = calculateMinor(matrix, 0, i);
+            int cofactor = (i%2 == 0) ? minor : (26-minor) % 26;
+            det = (det + (matrix[0][i] * cofactor) % 26) % 26;
+        }
+
+        return det;
+    }
+
+    private static int calculateMinor(int[][] matrix, int row, int col) 
+    {
+        int size = matrix.length;
+        int[][] minorMatrix = new int[size - 1][size - 1];
+        int minorRow = 0;
+        int minorCol = 0;
+
+        for (int i=0; i<size; i++) 
+        {
+            if (i == row) 
+            {
+                continue;
+            }
+            minorCol = 0;
+            for (int j=0; j<size; j++) 
+            {
+                if (j == col) 
+                {
+                    continue;
+                }
+                minorMatrix[minorRow][minorCol] = matrix[i][j];
+                minorCol++;
+            }
+            minorRow++;
+        }
+
+        int minorDet = calculateDeterminant(minorMatrix);
+        return minorDet;
+    }
+
+    private static int modInverse(int a, int m) 
+    {
+        a = a % m;
+        for (int x=1; x<m; x++) 
+        {
+            if ((a*x)%m == 1) 
+            {
+                return x;
+            }
+        }
+        return 1;
+    }
+
+    public static String encryptData(String message, int[][] keyMatrix) 
+    {
+        int size = keyMatrix.length;
+        StringBuilder encryptedText = new StringBuilder();
+
+        while (message.length() % size != 0) 
+        {
+            message += 'X';
+        }
+
+        for (int i=0; i<message.length(); i+=size) 
+        {
+            int[] block = new int[size];
+            for (int j=0; j<size; j++) 
+            {
+                block[j] = message.charAt(i+j) - 'A';
+            }
+
+            int[] result = new int[size];
+            for (int j=0; j<size; j++) 
+            {
+                for (int k=0; k<size; k++) 
+                {
+                    result[j] += keyMatrix[j][k] * block[k];
+                }
+                result[j] %= 26;
+                encryptedText.append((char) (result[j] + 'A'));
+            }
+        }
+
+        return encryptedText.toString();
+    }
+
+    public static String decryptData(String encryptedMessage, int[][] keyMatrix) 
+    {
+        int size = keyMatrix.length;
+        int[][] inverseMatrix = inverseMatrix(keyMatrix);
+        StringBuilder decryptedText = new StringBuilder();
+
+        for (int i=0; i<encryptedMessage.length(); i+=size) 
+        {
+            int[] block = new int[size];
+            for (int j=0; j<size; j++) 
+            {
+                block[j] = encryptedMessage.charAt(i+j) - 'A';
+            }
+
+            int[] result = new int[size];
+            for (int j=0; j<size; j++) 
+            {
+                for (int k=0; k<size; k++) 
+                {
+                    result[j] += inverseMatrix[j][k] * block[k];
+                }
+                result[j] %= 26;
+                decryptedText.append((char) (result[j] + 'A'));
+            }
+        }
+
+        return decryptedText.toString();
+    }
+
+    public static void main(String[] args)   
+    {
+        int choice, keyMatrix[][];
+        String plainText, cipherText, keyword;
+        Scanner sc = new Scanner(System.in);
+        do
+        {         
+            System.out.println("\n\n**********HILL CIPHER ALGORITHM IMPLEMENTATION**********");  
+            System.out.println("==========================================================");
+            System.out.println("1. Encrypt a text");
+            System.out.println("2. Decrypt a text");   
+            System.out.println("0. Exit \n");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+            switch(choice)
+            {
+                case 1: 
+                    System.out.print("Enter plain text: ");
+                    plainText = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    System.out.print("Enter key: ");
+                    keyword = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    keyMatrix = getKeyMatrix(keyword);
+                    cipherText = encryptData(plainText, keyMatrix);
+                    System.out.print("Cipher text: " + cipherText);
+                    break;
+                case 2:
+                    System.out.print("Enter cipher text: ");
+                    cipherText = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    System.out.print("Enter key: ");
+                    keyword = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    keyMatrix = getKeyMatrix(keyword);
+                    plainText = decryptData(cipherText, keyMatrix);
+                    System.out.print("Plain text: " + plainText);
+                    break;
+                case 0:
+                    System.out.println("\n\n");
+                    break;
+                default:
+                    System.out.println("INVALID CHOICE");
+            }
+        } while (choice!=0);
+        sc.close();
+    }
+}
