@@ -1,0 +1,128 @@
+import java.util.Scanner;
+import java.util.Arrays;
+
+public class Practical5 
+{
+    public static String encryptData(String plainText, String keyword) 
+    {
+        int numColumns = keyword.length();
+        int numRows = (int)Math.ceil((double)plainText.length()/numColumns);
+        char[][] matrix = new char[numRows][numColumns];
+        int currentIndex = 0;
+        for (int row=0; row<numRows; row++) 
+        {
+            for (int col=0; col<numColumns; col++) 
+            {
+                if (currentIndex < plainText.length()) 
+                {
+                    matrix[row][col] = plainText.charAt(currentIndex);
+                    currentIndex++;
+                }
+                else
+                {
+                    matrix[row][col] = 'X';
+                }
+            }
+        }
+        // Sort the keyword and rearrange the columns based on the sorted order
+        char[] sortedKeyword = keyword.toCharArray();
+        Arrays.sort(sortedKeyword);
+        int[] columnOrder = new int[numColumns];
+        for (int i=0; i<numColumns; i++) 
+        {
+            int originalIndex = keyword.indexOf(sortedKeyword[i]);
+            columnOrder[i] = originalIndex;
+        }
+        // Read off the characters in the sorted column order to get the ciphertext
+        StringBuilder cipherText = new StringBuilder();
+        for (int col : columnOrder) 
+        {
+            for (int row=0; row<numRows; row++)
+            {
+                char c = matrix[row][col];
+                cipherText.append(c);
+            }
+        }
+        return cipherText.toString();
+    }
+    
+    public static String decryptData(String cipherText, String keyword) 
+    {
+        int numColumns = keyword.length();
+        int numRows = (int) Math.ceil((double) cipherText.length() / numColumns);
+        char[][] matrix = new char[numRows][numColumns];
+        // Sort the keyword and rearrange the columns based on the sorted order
+        char[] sortedKeyword = keyword.toCharArray();
+        Arrays.sort(sortedKeyword);
+        int[] columnOrder = new int[numColumns];
+        for (int i=0; i<numColumns; i++) 
+        {
+            int originalIndex = keyword.indexOf(sortedKeyword[i]);
+            columnOrder[i] = originalIndex;
+        }
+        // Arrange the ciphertext in the matrix
+        int currentIndex=0;
+        for (int col : columnOrder) 
+        {
+            for (int row=0; row<numRows; row++)
+            {
+                matrix[row][col] = cipherText.charAt(currentIndex);
+                currentIndex++;
+            }
+        }
+        // Read off the characters row-wise in the original column order to get the plaintext
+        StringBuilder plainText = new StringBuilder();
+        for (int row=0; row<numRows; row++) 
+        {
+            for (int col=0; col<numColumns; col++) 
+            {
+                char c = matrix[row][col];
+                plainText.append(c);
+            }
+        }
+        return plainText.toString();
+    }
+
+    public static void main(String[] args)   
+    {
+        int choice;
+        String plainText, cipherText, keyword;
+        Scanner sc = new Scanner(System.in);
+        do
+        {         
+            System.out.println("\n\n**********RAILFENCE CIPHER ALGORITHM IMPLEMENTATION**********");  
+            System.out.println("=============================================================");
+            System.out.println("1. Encrypt a text");
+            System.out.println("2. Decrypt a text");   
+            System.out.println("0. Exit \n");
+            System.out.print("Enter your choice: ");
+            choice = sc.nextInt();
+            sc.nextLine();
+            switch(choice)
+            {
+                case 1: 
+                    System.out.print("Enter plain text: ");
+                    plainText = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    System.out.print("Enter keyword: ");
+                    keyword = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    cipherText = encryptData(plainText, keyword);
+                    System.out.print("Cipher text: " + cipherText);
+                    break;
+                case 2:
+                    System.out.print("Enter cipher text: ");
+                    cipherText = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    System.out.print("Enter keyword: ");
+                    keyword = sc.nextLine().replaceAll("[^a-zA-Z]", "").toUpperCase();
+                    plainText = decryptData(cipherText, keyword);
+                    System.out.print("Plain text: " + plainText);
+                    break;
+                case 0:
+                    System.out.println("\n\n");
+                    break;
+                default:
+                    System.out.println("INVALID CHOICE");
+            }
+        } while (choice!=0);
+        sc.close();
+    }
+}
